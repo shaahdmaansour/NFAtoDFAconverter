@@ -1,10 +1,12 @@
 import pandas as pd
 from itertools import chain, combinations
+from graphviz import Digraph
+from IPython.display import Image, display
 
 def computeEpsilonClosure(nfa, states):
     closure = set(states)
     stack = list(states)
-    
+
     while stack:
         currentState = stack.pop()
 
@@ -14,19 +16,19 @@ def computeEpsilonClosure(nfa, states):
                 if nextState not in closure:
                     closure.add(nextState)
                     stack.append(nextState)
-    
+
     return closure
 
 def computeTransition(nfa, states, symbol):
     # first get the epsilon closure of the input states
     startStates = computeEpsilonClosure(nfa, states)
-    
+
     # find all states reachable on the given symbol
     reachableStates = set()
     for state in startStates:
         if state in nfa and symbol in nfa[state]:
             reachableStates.update(nfa[state][symbol])
-    
+
     # return the epsilon closure of the reachableStates
     return computeEpsilonClosure(nfa, reachableStates)
 
@@ -39,75 +41,73 @@ def createDFA(nfa, inputSymbols, nfaFinalStates):
     # create DFA using powerset method "subset construction"
     # get all NFA states
     nfaStates = list(nfa.keys())
-    
+
     # initialize DFA
     dfa = {}
     dfaFinalStates = set()
-    
+
     # eet the start state of DFA (epsilon closure of NFA start state)
     dfaStartState = frozenset(computeEpsilonClosure(nfa, {nfaStates[0]}))
-    
+
     # initialize queue for processing DFA states
     queue = [dfaStartState]
     processed = set()
-    
+
     while queue:
         currentState = queue.pop(0)
         if currentState in processed:
             continue
-            
+
         processed.add(currentState)
         dfa[currentState] = {}
-        
+
         # check if this DFA state contains any NFA final states
         if any(state in nfaFinalStates for state in currentState):
             dfaFinalStates.add(currentState)
-        
+
         # compute transitions for each input symbol
         for symbol in inputSymbols:
             nextState = frozenset(computeTransition(nfa, currentState, symbol))
             dfa[currentState][symbol] = nextState
-            
+
             if nextState not in processed and nextState not in queue:
                 queue.append(nextState)
-    
+
     return dfa, dfaFinalStates, dfaStartState
 
 # step 1: NFA Input/Parsing
 nfa = {}
 inputSymbols = set()  # track all input symbols except epsilon
+n = int(input("No. of states: "))
 
-n = int(input("No. of states: "))  
-t = int(input("No. of transitions: "))  
-
+t = int(input("No. of transitions: "))
 for i in range(n):
-    state = input("State name: ").strip()  
-    nfa[state] = {}  
-    
+    state = input("State name: ").strip()
+
+    nfa[state] = {}
     for j in range(t):
-        path = input("Input symbol (e.g., a, b, ε): ").strip().lower()  
-        if path in ["ε", "e", "eps", "epsilon"]:  
+        path = input("Input symbol (e.g., a, b, ε): ").strip().lower()
+        if path in ["ε", "e", "eps", "epsilon"]:
             path = "ε"
         else:
             inputSymbols.add(path)
-        
-        reachingStates = input(f"Enter end state(s) from state {state} on input {path} (space-separated, or '∅' if none): ").split()  
-        
-        if reachingStates == ["∅"]:  
-            reachingStates = []
-        
-        nfa[state].setdefault(path, []).extend(reachingStates)  
 
+        print(f"Enter end state(s) from state {state} on input {path} (space-separated, or '∅' if none): ")
+        reaching_states = input().split()
+
+        if reaching_states == ["∅"]:
+            reaching_states = []
+
+        nfa[state].setdefault(path, []).extend(reaching_states)
 print("\nNFA Representation:\n", nfa)
-
-nfaFinalStates = input("Enter final state(s) of NFA (space-separated): ").split()
+print("\nEnter final state(s) of NFA (space-separated): ")
+nfaFinalStates = input().split()
 
 # step 2: Epsilon and Transition Computation
 print("\nEpsilon Closures:")
 for state in nfa:
     closure = computeEpsilonClosure(nfa, {state})
     print(f"ε-closure({state}) = {sorted(closure)}")
-
 print("\nTransitions (including ε-closure):")
 for state in nfa:
     print(f"\nFrom state {state}:")
@@ -118,18 +118,15 @@ for state in nfa:
 # step 3: Subset Construction Algorithm "DFA creation"
 print("\nCreating DFA using subset construction!!")
 dfa, dfaFinalStates, dfaStartState = createDFA(nfa, inputSymbols, nfaFinalStates)
-
 print("\nDFA States:")
 for state in dfa:
     print(f"State: {sorted(state)}")
-
 print("\nDFA Transitions:")
 for state in dfa:
     print(f"\nFrom state {sorted(state)}:")
     for symbol in sorted(inputSymbols):
         nextState = dfa[state][symbol]
         print(f"  On input {symbol}: {sorted(nextState)}")
-
 print("\nDFA Start State:", sorted(dfaStartState))
 print("DFA Final States:")
 for state in dfaFinalStates:
@@ -138,7 +135,6 @@ for state in dfaFinalStates:
 # step 4: DFA Representation (Transition Table)
 dfaTable = []
 sortedInputSymbols = sorted(inputSymbols)
-
 for state in dfa:
     row = {
         "State": ','.join(sorted(state)),
@@ -149,28 +145,33 @@ for state in dfa:
         nextState = dfa[state][symbol]
         row[symbol] = ','.join(sorted(nextState)) if nextState else "∅"
     dfaTable.append(row)
-
 df = pd.DataFrame(dfaTable)
 df = df.set_index("State")
 print("\n--- DFA Transition Table ---\n")
 print(df.to_string())
 
-# save DFA representation to file
-with open('DFArepresentation.txt', 'w') as f:
-    f.write("--- DFA Transition Table ---\n\n")
-    f.write(df.to_string())
-    f.write("\n\nDFA States:\n")
-    for state in dfa:
-        f.write(f"State: {sorted(state)}\n")
-    f.write("\nDFA Transitions:\n")
-    for state in dfa:
-        f.write(f"\nFrom state {sorted(state)}:\n")
-        for symbol in sorted(inputSymbols):
-            nextState = dfa[state][symbol]
-            f.write(f"  On input {symbol}: {sorted(nextState)}\n")
-    f.write(f"\nDFA Start State: {sorted(dfaStartState)}\n")
-    f.write("DFA Final States:\n")
-    for state in dfaFinalStates:
-        f.write(f"  {sorted(state)}\n")
+# moslim eldawi 
+def visualize_dfa_colab(dfa, dfaFinalStates, dfaStartState, inputSymbols):
+    dot = Digraph(comment='Deterministic Finite Automaton')
 
-print("\nDFA representation has been saved to 'DFArepresentation.txt'")
+    for state in dfa:
+        label = ','.join(sorted(state))
+        shape = 'doublecircle' if state in dfaFinalStates else 'circle'
+        dot.node(label, shape=shape)
+
+    dot.node('', shape='point')
+    dot.edge('', ','.join(sorted(dfaStartState)))
+
+    for from_state, transitions in dfa.items():
+        from_label = ','.join(sorted(from_state))
+        for symbol, to_state in transitions.items():
+            to_label = ','.join(sorted(to_state))
+            dot.edge(from_label, to_label, label=symbol)
+
+    dot.render('dfa_visualization', format='png', view=False)
+    return 'dfa_visualization.png'
+
+
+image_path = visualize_dfa_colab(dfa, dfaFinalStates, dfaStartState, sortedInputSymbols)
+print(f"DFA Graph:")
+display(Image(filename=image_path))
