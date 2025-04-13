@@ -1,4 +1,5 @@
 import pandas as pd
+from itertools import chain, combinations
 
 def computeEpsilonClosure(nfa, states):
     closure = set(states)
@@ -29,6 +30,50 @@ def computeTransition(nfa, states, symbol):
     # return the epsilon closure of the reachableStates
     return computeEpsilonClosure(nfa, reachableStates)
 
+def powerset(iterable):
+    # generate alll possibles subsets
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
+def createDFA(nfa, inputSymbols, nfaFinalStates):
+    # create DFA using powerset method "subset construction"
+    # get all NFA states
+    nfaStates = list(nfa.keys())
+    
+    # initialize DFA
+    dfa = {}
+    dfaFinalStates = set()
+    
+    # eet the start state of DFA (epsilon closure of NFA start state)
+    dfaStartState = frozenset(computeEpsilonClosure(nfa, {nfaStates[0]}))
+    
+    # initialize queue for processing DFA states
+    queue = [dfaStartState]
+    processed = set()
+    
+    while queue:
+        currentState = queue.pop(0)
+        if currentState in processed:
+            continue
+            
+        processed.add(currentState)
+        dfa[currentState] = {}
+        
+        # check if this DFA state contains any NFA final states
+        if any(state in nfaFinalStates for state in currentState):
+            dfaFinalStates.add(currentState)
+        
+        # compute transitions for each input symbol
+        for symbol in inputSymbols:
+            nextState = frozenset(computeTransition(nfa, currentState, symbol))
+            dfa[currentState][symbol] = nextState
+            
+            if nextState not in processed and nextState not in queue:
+                queue.append(nextState)
+    
+    return dfa, dfaFinalStates, dfaStartState
+
+# step 1: NFA Input/Parsing
 nfa = {}
 inputSymbols = set()  # track all input symbols except epsilon
 
@@ -56,27 +101,38 @@ for i in range(n):
 
 print("\nNFA Representation:\n", nfa)
 
-print("\nNFA Transition Table:")
-nfaTable = pd.DataFrame(nfa).fillna('∅')  
-print(nfaTable.transpose())
-
 print("\nEnter final state(s) of NFA (space-separated): ")
 nfaFinalStates = input().split()
 
-print("\nFinal states of the NFA:", nfaFinalStates)
-
-# compute and display epsilon closures for all states
+# step 2: Epsilon and Transition Computation
 print("\nEpsilon Closures:")
 for state in nfa:
     closure = computeEpsilonClosure(nfa, {state})
     print(f"ε-closure({state}) = {sorted(closure)}")
 
-# compute and display transitions for all states on all input symbols
 print("\nTransitions (including ε-closure):")
-
 for state in nfa:
     print(f"\nFrom state {state}:")
-    
     for symbol in sorted(inputSymbols):
         transition = computeTransition(nfa, {state}, symbol)
         print(f"  On input {symbol}: {sorted(transition)}")
+
+# step 3: Subset Construction Algorithm "DFA creation"
+print("\nCreating DFA using subset construction!!")
+dfa, dfaFinalStates, dfaStartState = createDFA(nfa, inputSymbols, nfaFinalStates)
+
+print("\nDFA States:")
+for state in dfa:
+    print(f"State: {sorted(state)}")
+
+print("\nDFA Transitions:")
+for state in dfa:
+    print(f"\nFrom state {sorted(state)}:")
+    for symbol in sorted(inputSymbols):
+        nextState = dfa[state][symbol]
+        print(f"  On input {symbol}: {sorted(nextState)}")
+
+print("\nDFA Start State:", sorted(dfaStartState))
+print("DFA Final States:")
+for state in dfaFinalStates:
+    print(f"  {sorted(state)}")
