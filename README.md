@@ -35,12 +35,13 @@ pip install -r requirements.txt
 
 3. **Run the program**
 ```sh
-python project.py
+python NFAtoDFAconverter.py
 ```
 
 ## 📷 Sample Output
 
-- [will add picture here]
+- ![image](https://github.com/user-attachments/assets/63376597-6e0d-478d-b0f2-07f8599d7692)
+
 
 ## 🤝 Contributers
 
