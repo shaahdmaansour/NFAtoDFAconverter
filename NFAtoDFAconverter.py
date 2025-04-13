@@ -136,3 +136,23 @@ print("\nDFA Start State:", sorted(dfaStartState))
 print("DFA Final States:")
 for state in dfaFinalStates:
     print(f"  {sorted(state)}")
+
+# step 4: DFA Representation (Transition Table)
+dfaTable = []
+sortedInputSymbols = sorted(inputSymbols)
+
+for state in dfa:
+    row = {
+        "State": ','.join(sorted(state)),
+        "Is Start": "Yes" if state == dfaStartState else "",
+        "Is Final": "Yes" if state in dfaFinalStates else ""
+    }
+    for symbol in sortedInputSymbols:
+        nextState = dfa[state][symbol]
+        row[symbol] = ','.join(sorted(nextState)) if nextState else "∅"
+    dfaTable.append(row)
+
+df = pd.DataFrame(dfaTable)
+df = df.set_index("State")
+print("\n--- DFA Transition Table ---\n")
+print(df.to_string())
