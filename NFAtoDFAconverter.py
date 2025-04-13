@@ -5,18 +5,32 @@ def computeEpsilonClosure(nfa, states):
     stack = list(states)
     
     while stack:
-        current_state = stack.pop()
+        currentState = stack.pop()
 
         # check if current state has epsilon transitions
-        if current_state in nfa and "ε" in nfa[current_state]:
-            for next_state in nfa[current_state]["ε"]:
-                if next_state not in closure:
-                    closure.add(next_state)
-                    stack.append(next_state)
+        if currentState in nfa and "ε" in nfa[currentState]:
+            for nextState in nfa[currentState]["ε"]:
+                if nextState not in closure:
+                    closure.add(nextState)
+                    stack.append(nextState)
     
     return closure
 
+def computeTransition(nfa, states, symbol):
+    # first get the epsilon closure of the input states
+    startStates = computeEpsilonClosure(nfa, states)
+    
+    # find all states reachable on the given symbol
+    reachableStates = set()
+    for state in startStates:
+        if state in nfa and symbol in nfa[state]:
+            reachableStates.update(nfa[state][symbol])
+    
+    # return the epsilon closure of the reachableStates
+    return computeEpsilonClosure(nfa, reachableStates)
+
 nfa = {}
+inputSymbols = set()  # track all input symbols except epsilon
 
 n = int(input("No. of states: "))  
 t = int(input("No. of transitions: "))  
@@ -29,6 +43,8 @@ for i in range(n):
         path = input("Input symbol (e.g., a, b, ε): ").strip().lower()  
         if path in ["ε", "e", "eps", "epsilon"]:  
             path = "ε"
+        else:
+            inputSymbols.add(path)
         
         print(f"Enter end state(s) from state {state} on input {path} (space-separated, or '∅' if none): ")
         reaching_states = input().split()  
@@ -49,8 +65,18 @@ nfaFinalStates = input().split()
 
 print("\nFinal states of the NFA:", nfaFinalStates)
 
-# Compute and display epsilon closures for all states
+# compute and display epsilon closures for all states
 print("\nEpsilon Closures:")
 for state in nfa:
     closure = computeEpsilonClosure(nfa, {state})
     print(f"ε-closure({state}) = {sorted(closure)}")
+
+# compute and display transitions for all states on all input symbols
+print("\nTransitions (including ε-closure):")
+
+for state in nfa:
+    print(f"\nFrom state {state}:")
+    
+    for symbol in sorted(inputSymbols):
+        transition = computeTransition(nfa, {state}, symbol)
+        print(f"  On input {symbol}: {sorted(transition)}")
