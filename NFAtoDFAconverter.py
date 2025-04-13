@@ -91,18 +91,16 @@ for i in range(n):
         else:
             inputSymbols.add(path)
         
-        print(f"Enter end state(s) from state {state} on input {path} (space-separated, or '∅' if none): ")
-        reaching_states = input().split()  
+        reachingStates = input(f"Enter end state(s) from state {state} on input {path} (space-separated, or '∅' if none): ").split()  
         
-        if reaching_states == ["∅"]:  
-            reaching_states = []
+        if reachingStates == ["∅"]:  
+            reachingStates = []
         
-        nfa[state].setdefault(path, []).extend(reaching_states)  
+        nfa[state].setdefault(path, []).extend(reachingStates)  
 
 print("\nNFA Representation:\n", nfa)
 
-print("\nEnter final state(s) of NFA (space-separated): ")
-nfaFinalStates = input().split()
+nfaFinalStates = input("Enter final state(s) of NFA (space-separated): ").split()
 
 # step 2: Epsilon and Transition Computation
 print("\nEpsilon Closures:")
