@@ -154,3 +154,23 @@ df = pd.DataFrame(dfaTable)
 df = df.set_index("State")
 print("\n--- DFA Transition Table ---\n")
 print(df.to_string())
+
+# save DFA representation to file
+with open('DFArepresentation.txt', 'w') as f:
+    f.write("--- DFA Transition Table ---\n\n")
+    f.write(df.to_string())
+    f.write("\n\nDFA States:\n")
+    for state in dfa:
+        f.write(f"State: {sorted(state)}\n")
+    f.write("\nDFA Transitions:\n")
+    for state in dfa:
+        f.write(f"\nFrom state {sorted(state)}:\n")
+        for symbol in sorted(inputSymbols):
+            nextState = dfa[state][symbol]
+            f.write(f"  On input {symbol}: {sorted(nextState)}\n")
+    f.write(f"\nDFA Start State: {sorted(dfaStartState)}\n")
+    f.write("DFA Final States:\n")
+    for state in dfaFinalStates:
+        f.write(f"  {sorted(state)}\n")
+
+print("\nDFA representation has been saved to 'DFArepresentation.txt'")
